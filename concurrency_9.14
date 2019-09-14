@@ -1,0 +1,10 @@
+# threads
+* differentiate thread vs. execution, thread is just the "handle" which runs the function
+* thread creator
+  * t.join() waits for child
+  * t.deatch() detaches from  child (thread becomes daemon thread)
+* thread lifetime
+  * a thread is joinable if join() or detach() not performed
+  * joinable thread calls std::terminate in its destructor
+* thread args
+  * threads should get its arguments by copy (so validity of data is ensured)
