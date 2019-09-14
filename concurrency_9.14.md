@@ -115,11 +115,16 @@ OR
 } // curly braces for scope
 ```
 
-# thread safe data
+# thread safe initialization
 
 * rules of concurrency
   1. be as local as possible (don't share)
   2. be as const as possible
+    * if your variable is read only (const), the only thing that needs to be thread safe is during initialization
+1. constant expressions
+2. std::call_once + std::once_flag
+3. static variables with block scope (use curly braces)
+4. initialize before you start threading
 
 ## constexpr (since c++11)
 * evaluated/initialized during compile time
@@ -158,14 +163,10 @@ struct MyDouble {
 constexpr MyDouble myDouble(10.5);
 ```
 
-* thread safe initialization
-  * if your variable is read only (const), the only thing that needs to be thread safe is during initialization
-  1. constant expressions
-  2. std::call_once + std::once_flag (kind of like atomci bool): ensures only one thread can run the function
-    * call_once: registers a callable unit
-    * once_flag: guarantees one of the registered functions will be called once
-  3. static variables with block scope (2 curly braces): example-Singleton pattern
-  4. initialize before you start threading
+## std::call_once + std::once_flag
+* ensures only one thread can run the function
+* call_once: registers a callable unit
+* once_flag: guarantees one of the registered functions will be called once
 
 ```
 // call_once + once_flag
@@ -188,13 +189,9 @@ std::thread t1(doOnce);
 std::thread t2(doOnce2);
 std::thread t3(doOnce);
 std::thread t4(doOnce2);
-
-// static variables
-void blockScope() {
-  static int mySharedData = 2019;
-}
 ```
 
+## exmpale: initialization of Singleton
 * double lock checking (order of operations)
   * 1. memory is allocated
   * 2. assignment happens
@@ -202,7 +199,7 @@ void blockScope() {
   * this is broken, suppose getInstance() returns a pointer to an object which isn't fully constructed yet
 
 ```
-// this doesn't work
+// double lock checking, this doesn't work
 static MySingleton* getInstance() {
   if (!instance) {
     std::lock_guard<std::mutex> myLock(myMutex);
@@ -213,9 +210,9 @@ static MySingleton* getInstance() {
   return instance;
 }
 
-// this works! static variable with block scope
+// Meyers singleton, this works
 static MySingleton* getInstance() {
-  static MySingleton mySingleton;
+  static MySingleton mySingleton; // thread safe by definition
   return &mySingleton;
 }
 
@@ -228,6 +225,88 @@ static MySingleton* getInstance() {
   return instance;
 }
 ```
+## thread local data
+* belongs exclusively to one thread
+* will be created at its first usage
+* bound to the lifetime of the thread (similar to static, which is bound to the lifetime of the main thread)
+
+```
+// output: 
+// this is thread: t2
+// address of s: 0x7f8656d00000
+// this is thread: t1
+// address of s: 0x7f8656f00000
+
+thread_local std::string s("this is thread: ");
+void printThreadLocal(const std::string& thisString) {
+  s += thisString;
+  std::cout << thisString << std::endl;
+  std::cout << "address of s: " << &s << std::endl;
+}
+
+int main() {
+  std::thread t1(printThreadLocal, "t1");
+  std::thread t2(printThreadLocal, "t2");
+
+  t1.join();
+  t2.join();
+
+  return 0;
+}
+```
+
+# condition variables
+* use case: sender/receiver, producer/consumer
+* std::condition_var
+
+```
+// send notification
+cv.notify_one() // notifies 1 waiting thread
+cv.notify_all() // notifies all waiting threads
+
+// receive notification
+cv.wait(lock, ...) // wait for notification
+cv.wait_for(lock, rel_time, ...) // wait for some time
+cv.wait_until(lock, abs_time, ...) // wait until a time
+```
+
+* receiver waits for notification while holding a lock
+  * if they don't wake up they will hold mutex forever -> deadlock
+  * you only receive notifications if you're in waiting mode, otherwise nothing will happen
+  * after calling wait
+    * if ready = true -> proceed with work
+    * if ready = false -> release lock and sleep, wait for notification
+* danger: 
+  * spurious wakeup: you were woken up but you weren't supposed to
+  * lost wakeup: you were supposed to wake up and you didn't
+
+```
+// sender
+{
+  std::lock_guard<std::mutex> myLock(myMutex);
+  ready = true;
+}
+cv.notify_one();
+
+// receiver
+{
+  std::lock_guard<std::mutex> myLock(myMutex);
+  // second argument is a predicate, we check if it's true
+  cv.wait(myLock, []{ return ready; }});
+}
+```
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
