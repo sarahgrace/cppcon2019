@@ -1,0 +1,32 @@
+sarahgw-mbp:Concurrency sarahgw$ g++ --std=c++17 threadArguments.cpp -fsanitize=thread -g
+sarahgw-mbp:Concurrency sarahgw$ ./a.out
+
+valSleeper = 1000
+
+==================
+WARNING: ThreadSanitizer: data race (pid=23724)
+  Write of size 4 at 0x7ffee8f157ac by thread T1:
+    #0 Sleeper::operator()(int) threadArguments.cpp:11 (a.out:x86_64+0x100002c0c)
+    #1 void* std::__1::__thread_proxy<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct> >, Sleeper, int> >(void*) thread:352 (a.out:x86_64+0x100002703)
+
+  Previous read of size 4 at 0x7ffee8f157ac by main thread:
+    #0 main threadArguments.cpp:27 (a.out:x86_64+0x100000fc5)
+
+  As if synchronized via sleep:
+    #0 nanosleep <null>:1063184 (libclang_rt.tsan_osx_dynamic.dylib:x86_64h+0x28163)
+    #1 std::__1::this_thread::sleep_for(std::__1::chrono::duration<long long, std::__1::ratio<1l, 1000000000l> > const&) <null>:1063184 (libc++.1.dylib:x86_64+0xbdc3)
+    #2 Sleeper::operator()(int) threadArguments.cpp:10 (a.out:x86_64+0x100002bc5)
+    #3 void* std::__1::__thread_proxy<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct> >, Sleeper, int> >(void*) thread:352 (a.out:x86_64+0x100002703)
+
+  Location is stack of main thread.
+
+  Thread T1 (tid=8578692, running) created by main thread at:
+    #0 pthread_create <null>:1063136 (libclang_rt.tsan_osx_dynamic.dylib:x86_64h+0x2968d)
+    #1 std::__1::thread::thread<Sleeper, int, void>(Sleeper&&, int&&) thread:368 (a.out:x86_64+0x100001d04)
+    #2 std::__1::thread::thread<Sleeper, int, void>(Sleeper&&, int&&) thread:360 (a.out:x86_64+0x1000012f8)
+    #3 main threadArguments.cpp:25 (a.out:x86_64+0x100000f8d)
+
+SUMMARY: ThreadSanitizer: data race threadArguments.cpp:11 in Sleeper::operator()(int)
+==================
+ThreadSanitizer: reported 1 warnings
+0x7e8000104000Abort trap: 6
