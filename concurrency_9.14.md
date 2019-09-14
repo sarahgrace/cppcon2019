@@ -18,7 +18,7 @@
 // thread interface
 t.joinable() // check if supports join() or detach()
 t.get_id() or std::this_thread::get_id() // return id of thread
-std::thread::hardware_concurrency() // hint for \# threads that can run in parallel
+std::thread::hardware_concurrency() // hint for # threads that can run in parallel
 std::this_thread::sleep_until(abs_time)
 std::this_thread::sleep_for(rel_time)
 std::this_thread::yield() // offers the system to execute another thread
@@ -74,11 +74,11 @@ m.unlock();
 * lock_guard: non-copyable, automatically unlock when it goes out of scope
   * RAII (resource acquisition is initialization): resource guard, releases the resource in its destructor
   * declare resource guards locally so the resource will guaranteed to be released once it goes out of scope
+  * calling lock()/unlock() is an antipattern
   * curly braces are important- it denotes scope
 
 ```
 // use lockguard instead of mutexes so you don't have to explicitly call unlock!
-// calling lock()/unlock() is an antipattern
 std::mutex coutMutex;
 std::lock_guard<std::mutex> lockCount(coutMutex); // instead of coutMutex.lock() and unlock()
 std::cout << "hi" << std::endl;
@@ -114,5 +114,120 @@ OR
   // critical region
 } // curly braces for scope
 ```
+
+# thread safe data
+
+* rules of concurrency
+  1. be as local as possible (don't share)
+  2. be as const as possible
+
+## constexpr (since c++11)
+* evaluated/initialized during compile time
+* implicitly thread-safe
+* flavors
+  1. variables
+    * implicit const
+    * when you initialize a const with a literal, it becomes a constexpr (`const int a = 10 -> constexpr int a = 10`)
+  2. functions
+    * gives the function the POTENTIAL to run at compile time, but may also run at runtime (depending on where it's used)
+    * constexpr return value
+    * function body can only be a return statement (in c++14, can have loops, variables but make sure the function is pure)
+    * implicitly inline
+  3. user-defined type
+    * constructor has to be empty and constexpr
+    * can have methods which are constexpr
+    * instances can be instantiated at compile time
+
+```
+// constexpr variable
+constexpr double myDouble = 10.5;
+
+// constexpr function
+constexpr int fac(int n) {
+  return n > 0 ? n * fac(n - 1) : 1;
+}
+
+// constexpr user-defined stype 
+struct MyDouble {
+  constexpr MyDouble(double v): val(v) {}
+  constexpr double getValue() { return val; }
+  private:
+    double val;
+};
+
+constexpr MyDouble myDouble(10.5);
+```
+
+* thread safe initialization
+  * if your variable is read only (const), the only thing that needs to be thread safe is during initialization
+  1. constant expressions
+  2. std::call_once + std::once_flag (kind of like atomci bool): ensures only one thread can run the function
+    * call_once: registers a callable unit
+    * once_flag: guarantees one of the registered functions will be called once
+  3. static variables with block scope (2 curly braces): example-Singleton pattern
+  4. initialize before you start threading
+
+```
+// call_once + once_flag
+std::once_flag onceFlag;
+
+void doOnce() {
+  std::call_once(onceFlag, [](){
+    std::cout << "once" << std::endl;
+  });
+}
+
+void doOnce2() {
+  std::call_once(onceFlag, [](){
+    std::cout << "once2" << std::endl;
+  });
+}
+
+// only one line will be printed because doOnce() and doOnce2() both use the same once_flag
+std::thread t1(doOnce);
+std::thread t2(doOnce2);
+std::thread t3(doOnce);
+std::thread t4(doOnce2);
+
+// static variables
+void blockScope() {
+  static int mySharedData = 2019;
+}
+```
+
+* double lock checking (order of operations)
+  * 1. memory is allocated
+  * 2. assignment happens
+  * 3. constructor runs
+  * this is broken, suppose getInstance() returns a pointer to an object which isn't fully constructed yet
+
+```
+// this doesn't work
+static MySingleton* getInstance() {
+  if (!instance) {
+    std::lock_guard<std::mutex> myLock(myMutex);
+    if (!instance) {
+      instance = new MySingleton();
+    }
+  }
+  return instance;
+}
+
+// this works! static variable with block scope
+static MySingleton* getInstance() {
+  static MySingleton mySingleton;
+  return &mySingleton;
+}
+
+// this also works
+std::once_flag onceFlag;
+static MySingleton* getInstance() {
+  std::call_once(onceFlag, []() {
+    instance = new MySingleton();
+  });
+  return instance;
+}
+```
+
 
 
