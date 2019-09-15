@@ -296,6 +296,46 @@ causes:
 * atomic operations with stronger memory orderings take precedence over relaxed semantic
 * threads may see operations in another thread in a different sequence!
 
+# parallel STL
+
+* execution policies:
+  * `std::execution::seq`: runs in one thread
+  * `std::execution::par`: parallel
+  * `std::execution: par_unseq`: parallel + vectorized
+* executing in parallel has dangers of deadlocks/data races
+
+```
+sort(vec.begin(), vec.end()); // sequential
+sort(execution::seq, vec.begin(), vec.end()); // sequential 
+sort(execution::par, vec.begin(), vec.end()); // parallel 
+sort(execution::par_unseq, vec.begin(), vec.end()); // par + vec
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
