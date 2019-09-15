@@ -47,7 +47,7 @@ int main(){
   for (int i = 0; i < nProcs; i++)  {
     auto startOffset = i * len;
     auto endOffset = (i + 1) * len;
-    futures.push_back(std::async([&v, &w, startOffset, endOffset]{ 
+    futures.push_back(std::async(std::launch::async, [&v, &w, startOffset, endOffset]{ 
       return getDotProduct(v, w, startOffset, endOffset);
     }));
   }

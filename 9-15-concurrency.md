@@ -78,6 +78,7 @@ fut2.get();
 ```
 ## std::packaged_task
 * simple wrapper for a callable function that can be executed later
+* unlike promise/future, can be reset and reused (with reset()
 
 ```
 // 1. declare function
@@ -95,9 +96,27 @@ sumT(2000, 11);
 // 5. print result
 std::cout << sumResult.get() << std::endl;
 ```
+## std::promise, std::futures, std::shared_future
+* nearly all async entities are not copyable (only movable)
+* exception is std::shared_future
 
+```
+// promise interface
+p.swap(p2) // swap 2 promises
+p.get_future() // return std::future
+p.set_value(val) // make value available to future
+p.set_exception(ex) // make exception available to future
+p.set_value_at_thread_exit(val) // store value and set to valid when thread is done
+p.set_exception_at_thread_exit(ex) // store exception and set to valid when thread is done
 
-
+// future interface
+f.share() // return std::shared_future (after calling f.share(), f.valid() returns false)
+f.get() // returns value, if exception, throws
+f.valid() // check if shared state is available
+f.wait() // wait until shared state is available
+f.wait_for(rel_time) // wait at most for some time
+f.wait_until(abs_time) // wait until a certain time
+```
 
 
 
