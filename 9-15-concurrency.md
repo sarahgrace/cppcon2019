@@ -143,14 +143,14 @@ lost wakeup | yes | no
 # the memory model
 
 ## the contract
-* developer respects the rules
-  * atomic operations
-  * partial ordering of operations
-  * visible effects of operations
-* system wants to optimize
-  * compile
-  * proessor
-  * memory system
+developer respects the rules
+* atomic operations
+* partial ordering of operations
+* visible effects of operations
+system wants to optimize
+* compile
+* proessor
+* memory system
 
 1. single threaded: one control flow
 2. multi-threaded: tasks, threads, condition variables
@@ -161,9 +161,9 @@ lost wakeup | yes | no
 * synchronization & ordering guarantees established for atomics & non-atomics
 
 ### std::atomic_flag
-  * interface: clear(), test_and_set()
-  * the only lock-free data structure (all other types may internally use a lock)
-  * building block for higher abstractions, such as a spinlock
+* interface: clear(), test_and_set()
+* the only lock-free data structure (all other types may internally use a lock)
+* building block for higher abstractions, such as a spinlock
 
 ```
 class Spinlock {
@@ -179,24 +179,101 @@ public:
   }
 };
 ```
-### std::atomic<bool>
+### std::atomic
+
+std::atomic<bool>
 * explicitly set to true or false
 * supports compare_exchange_strong (compare and swap)
   * fundamental function for atomic operations
   * compares and sets a value in an atomic operation
-  * `bool compare_exchange_strong(expected, updated)
+  * `bool compare_exchange_strong(expected&, updated)
 * can be used for implementing a condition variable
+  * condition variable is push, std::atomic<bool> is pull 
  
 ```
-atom.compare_exchange_strong(expected, updated)
+atom.compare_exchange_strong(expected&, updated)
 *atom == expected -> *atom = updated -> return true
-*atom != expected -> exp = *atom (change expected?) -> return false;
+*atom != expected -> exp = *atom (change expected) -> return false;
 ```
 
+std::atomic
+* std::atomic<T*>
+* std::atomic<Integral type>
+* std::atomic<User-defined type> (tbh, easier to do a pointer to a user-defined type)
+  * copy assignment & that of base classes must be trivial
+  * cannot have virtual methods or base classes
+  * must be bitwise comparable
 
+atomic operations (notice how there's no multiply or divide)
+operation | type
+--- | ---
+test_and_set | read-modify-write (atomic_flag only)
+clear | write (atomic_flag only)
+is_lock_free | read
+load | read
+store | write
+exchange | read-modify-write
+compare_exchange_weak | read-modify-write
+compare_exchange_strong | read-modify-write
+fetch_add, += | read-modify-write
+fetch_sub, -= | read-modify-write
+++, -- | read-modify-write
 
+```
+// atomic mult
+template <typename T>
+T fetch_mult(std::atomic<T>& shared, T mult) {
+  // store old variable in case another thread changes the value
+  T old = shared.load();
+  // returns true if successful
+  // returns false otherwise and sets old value to the changed value
+  while (!shared.compare_exchange_strong(oldValue, oldValue * mult));
+  return oldValue;
+}
+```
+## synchronization & ordering
+```
+enum memory_order {
+  memory_order_relaxed,
+  memory_order_consume,
+  memory_order_acquire,
+  memory_order_release,
+  memory_order_acl_rel,
+  memory_order_seq_cst
+};
+```
+* `memory_order_seq_cst`
+  * default, memory model for C# and Java
+  * implicit for atomic operations -> shared.load() == shared.load(std::memory_order_seq_cst)
 
+1. which kind of operations should you use which memory ordering?
+  * read ops:
+    * `memory_order_consume`
+    * `memory_order_acquire`
+  * write ops:
+    * `memory_order_release
+  * read-modify-write ops
+    * `memory_order_acq_rel`
+    * `memory_order_seq_cst`
+  * `memory_order_relaxed` doesn't define any constraints
+2. which synchronization and ordering constraints are defined by the various memory models?
+  * sequential consistency
+    * `memory_order_seq_cst`
+  * acquire-release semantic
+    * `memory_order_consume`
+    * `memory_order_acquire`
+    * `memory_order_release
+    * `memory_order_acq_rel`
+  * relaxed semantic
+    * `memory_order_relaxed`
 
+### sequential consistency
+1. operations of the program will be executed in source code order
+2. there is global order of all operations on all threads
+
+causes:
+1. statements executed in source code order
+2. each thread observes operations of the other threads in the same sequence (unique clock)
 
 
 
