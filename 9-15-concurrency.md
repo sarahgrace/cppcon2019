@@ -115,7 +115,7 @@ f.wait_for(rel_time) // wait at most for some time
 f.wait_until(abs_time) // wait until a certain time
 ```
 * nearly all async entities are not copyable (only movable)
-* exception is std::shared_future (created by f.share())
+* exception is std::shared_future
   * how to create:
     * `f.share()`
     * `std::shared_future<int> result = p.get_future()`
@@ -143,14 +143,14 @@ lost wakeup | yes | no
 # the memory model
 
 ## the contract
-developer respects the rules
-* atomic operations
-* partial ordering of operations
-* visible effects of operations
-system wants to optimize
-* compile
-* proessor
-* memory system
+* developer respects the rules
+  * atomic operations
+  * partial ordering of operations
+  * visible effects of operations
+* system wants to optimize
+  * compile
+  * proessor
+  * memory system
 
 1. single threaded: one control flow
 2. multi-threaded: tasks, threads, condition variables
@@ -179,9 +179,7 @@ public:
   }
 };
 ```
-### std::atomic
-
-std::atomic<bool>
+### std::atomic\<bool\>
 * explicitly set to true or false
 * supports compare_exchange_strong (compare and swap)
   * fundamental function for atomic operations
@@ -196,7 +194,7 @@ atom.compare_exchange_strong(expected&, updated)
 *atom != expected -> exp = *atom (change expected) -> return false;
 ```
 
-std::atomic
+### std::atomic
 * std::atomic<T*>
 * std::atomic<Integral type>
 * std::atomic<User-defined type> (tbh, easier to do a pointer to a user-defined type)
@@ -251,7 +249,7 @@ enum memory_order {
     * `memory_order_consume`
     * `memory_order_acquire`
   * write ops:
-    * `memory_order_release
+    * `memory_order_release`
   * read-modify-write ops
     * `memory_order_acq_rel`
     * `memory_order_seq_cst`
@@ -262,7 +260,7 @@ enum memory_order {
   * acquire-release semantic
     * `memory_order_consume`
     * `memory_order_acquire`
-    * `memory_order_release
+    * `memory_order_release`
     * `memory_order_acq_rel`
   * relaxed semantic
     * `memory_order_relaxed`
@@ -275,6 +273,28 @@ causes:
 1. statements executed in source code order
 2. each thread observes operations of the other threads in the same sequence (unique clock)
 
+### acquire-release semantic
+* acquire operation: use this for reads (`load` or `test_and_set`)
+  * lock mutex
+  * wait on condition variable
+  * start a thread
+* release operation: use this for writes (`store` or `clear`)
+  * unlock mutex
+  * notify on condition variable
+  * join on a thread
+* ordering constraints:
+  * R/W ops can't be moved BEFORE acquire operation
+  * R/W ops can't be moved AFTER release operation
+
+* the issue is synchronization between threads, threads may not see the same order of operations inside another thread
+* the synchronization point is where two threads call read or write TO AN ATOMIC
+* acquire semantic means that operations that happen before synchronization are guaranteed to be visible
+* release semantic means that operations that happen before synchronization are guaranteed to be visible
+
+### relaxed semantic
+* no synchronization or ordering constraints, operations are just atomic
+* atomic operations with stronger memory orderings take precedence over relaxed semantic
+* threads may see operations in another thread in a different sequence!
 
 
 
