@@ -129,19 +129,18 @@ OR
 ## constexpr (since c++11)
 * evaluated/initialized during compile time
 * implicitly thread-safe
-* flavors
-  1. variables
-    * implicit const
-    * when you initialize a const with a literal, it becomes a constexpr (`const int a = 10 -> constexpr int a = 10`)
-  2. functions
-    * gives the function the POTENTIAL to run at compile time, but may also run at runtime (depending on where it's used)
-    * constexpr return value
-    * function body can only be a return statement (in c++14, can have loops, variables but make sure the function is pure)
-    * implicitly inline
-  3. user-defined type
-    * constructor has to be empty and constexpr
-    * can have methods which are constexpr
-    * instances can be instantiated at compile time
+1. variables
+  * implicit const
+  * when you initialize a const with a literal, it becomes a constexpr (`const int a = 10 -> constexpr int a = 10`)
+2. functions
+  * gives the function the POTENTIAL to run at compile time, but may also run at runtime (depending on where it's used)
+  * constexpr return value
+  * function body can only be a return statement (in c++14, can have loops, variables but make sure the function is pure)
+  * implicitly inline
+3. user-defined type
+  * constructor has to be empty and constexpr
+  * can have methods which are constexpr
+  * instances can be instantiated at compile time
 
 ```
 // constexpr variable
@@ -276,11 +275,16 @@ cv.wait_until(lock, abs_time, ...) // wait until a time
   * after calling wait
     * if ready = true -> proceed with work
     * if ready = false -> release lock and sleep, wait for notification
+* sender does stuff, then calls notify to wake up the receiver
+  * notify_one() is thread safe, doesn't need to be inside the critical section
 * danger: 
-  * spurious wakeup: you were woken up but you weren't supposed to
+  * spurious wakeup: you were woken up but you weren't supposed to, happens if sender notifies before receiver waits
   * lost wakeup: you were supposed to wake up and you didn't
+    * using atomic<bool> for your predicate doesn't protect you from this, you still need to use a lock
 
 ```
+std::mutex myMutex;
+
 // sender
 {
   std::lock_guard<std::mutex> myLock(myMutex);
@@ -290,9 +294,16 @@ cv.notify_one();
 
 // receiver
 {
-  std::lock_guard<std::mutex> myLock(myMutex);
+  std::unique_lock<std::mutex> myLock(myMutex); // need unique_lock because you unlock inside wait if predicate is false
   // second argument is a predicate, we check if it's true
   cv.wait(myLock, []{ return ready; }});
+}
+
+// this way could result in a lost wakeup
+std::unique_lock<std::mutex> myLock(myMutex);
+while (![]{ return ready; }()) {
+  // time window when notification can come and wakeup will be lost
+  cv.wait(myLock);
 }
 ```
 

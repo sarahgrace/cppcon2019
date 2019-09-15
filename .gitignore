@@ -2,3 +2,4 @@
 *.swo
 *~
 concurrency/*
+.DS_Store
