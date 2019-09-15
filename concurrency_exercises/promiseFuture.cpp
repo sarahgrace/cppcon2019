@@ -12,7 +12,8 @@ struct Div{
 
   void operator() (std::promise<int>&& intPromise, int a, int b) const {
     if (b == 0) {
-      intPromise.set_exception(std::make_exception_ptr(std::invalid_argument("Divide by 0 not allowed.")));
+      intPromise.set_exception(
+        std::make_exception_ptr(std::invalid_argument("Divide by 0 not allowed.")));
       return;
     }
     intPromise.set_value(a/b);
