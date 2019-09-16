@@ -83,7 +83,7 @@ goal
 3. leave w in a valid but undefined state
 
 ```
-int i, std::string s, int* pi
+int i, std::string s, int * pi
 
 // Move constructor
 Widget(Widget&& w) noexcept 
@@ -98,13 +98,13 @@ Widget& operator=(Widget&& w) noexcept {
   s = std::moe(w.s);
   // pi = std::swap(pi, w.pi); , this is less deterministic
   w.pi = nullptr; // reset
-  return *this;
+  return * this;
 }
 
 // copy + move assignment operator
 Widget& operator=(Widget w) {
   swap(w); // your own implementation
-  return *this;
+  return * this;
 }
 
 void swap(Widget& w) {
@@ -115,6 +115,117 @@ void swap(Widget& w) {
 * default move operations generated if no copy operation or destructor is user-defined
 * default copy operations generated if no move operation is user-defined
 * `=default` and `=delete` count as user defined!
+* **if you =define or =delete any default operation, =define or =delete them all**
+
+# forwarding references
+* reference collapsing
+  * & &, && &, && & -> &
+  * && && -> &&
+
+```
+template <typename T>
+void foo(T&&) {
+  print("foo(T&&)");
+}
+
+// ex 1
+Widget w;
+foo(w); // prints
+
+// ex 2
+foo(Widget()) // prints
+```
+
+# std::forward
+* conditionally casts its input into an rvalue reference
+  * if given value is lvalue -> cast to lvalue reference
+  * if given value is rvalue -> cast to rvalue reference
+
+```
+template <typename T>
+T&& forward(remove_reference_t<T>&& t) noexcept {
+  return static_cast<T&&>(t);
+}
+
+template <typename T, typename... Args>
+unique_ptr<T> make_unique(Arg&& arg) {
+  return unique_ptr<T>(new T(std::forward<Args>(args)));
+}
+```
+
+# perils of forwarding references
+```
+struct Person {
+  Person(const std::string& name);
+  template <typename T> Person(T&&);
+};
+
+// calls ctor(2)
+Person p1("Bjarne"); // char[7]
+
+// calls ctor(2)
+std::string name("Herb");
+Person p2(name) // argument is not const (std::string&)
+
+// calls ctor(2)
+Person p3(p1); // argument is not const (Person&)
+```
+## overloading on forwarding references
+* if template is instantiated and becomes exactly like a non-templated function, the non-templated function is chosen
+
+1. lvalue reference
+* `void f(Widget&);`
+2. lvalue reference-to-const
+* `void f(const Widget&);`
+3. rvalue reference
+* `void f(Widget&&);`
+4. rvalue reference-to-const
+* `void f(const Widget&&);`
+5. template with forwarding reference
+* `template <typename T> void f(T&&);`
+6. template with rvalue reference-to-const
+* `template <typename T> void f(const T&&);`
+
+```
+// (1) Widget&
+// (5) T&&
+// (2) const Widget&
+Widget w;
+f(w);
+
+// (2) const Widget&
+// (5) T&&
+// (6) DOESN'T WORK because it's an rvalue reference
+const Widget w;
+f(w);
+
+// (3) Widget&&
+// (5) T&&
+// (4) const Widget&&
+// (6)
+// (2) const Widget&
+Widget getWidget()
+f(getWidget());
+
+// (4) const Widget&&
+// (6) const T&&
+// (5) T&&
+// (2) const Widget&
+const Widget getWidget()
+f(getWidget());
+```
+
+## move semantics pitfalls
+* if function is templated with T and function argument is T&&
+  * argument is a forwarding reference (can be lvalue or rvalue)
+  * don't unconditionally move (std::move), use std::forward<T>
+* if class is templated with T and function argument is T&&
+  * argument is rvalue reference, use std::move
+* no double std::move or std::forward
+* copy elision (return value optimization): if you return something from a function, compiler will optimize
+  * **don't return T&&**
+  * std::move() for a return statement will prevent RVO
+
 
 
 
