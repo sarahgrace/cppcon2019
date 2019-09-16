@@ -36,6 +36,7 @@ std::cout << s; // 4.56 and 3
 *wasn't paying attention*
 
 ## stringstream and basic_stringbuf
+* `starts_with` and `ends_with`
 
 ```
 std::stringstream s;
@@ -84,8 +85,8 @@ if (myMap.contains("key")) { // instead of myMap.find("key") != myMap.end()
 * erase_if: associative containers (map, multimap, set, etc.)
 
 # chrono
-* structure/field types (year_month_day): used for io, conversions
-* calculation types (sys_days, time_point, seconds): used for computation
+* structure/field types (`year_month_day`): used for io, conversions
+* calculation types (`sys_days`, `time_point`, `seconds`): used for computation
 * supports constexpr
 * no error handling!
   * ok() will tell you if a value is good
@@ -100,32 +101,13 @@ std::cout << d; // 2019-05-14
 
 # conurrency: threading and atomics
 
+## jthread
+* replacement for std::thread
+* automatically joins in the destructor
+* cooperative shutdown with `stop_token`
+  * ex: `while (!token.requested_stop()) { // do stuff }`
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+## atomic
+* atomic `shared_ptr` and `weak_ptr`
+  * removes `atomic_shared_ptr<T>` and `atomic_weak_ptr<T>`
+* `atomic_ref<T>`
