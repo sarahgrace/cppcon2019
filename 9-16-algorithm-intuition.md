@@ -79,6 +79,7 @@ bool all_of(Iterator r, Iterator l, Predicate p)  {
 
 ## adjacent difference
 * N coins, want to find 2 coins with the minimum difference
+
 ```
 int min_value(vector<int>& c) {
   sort(begin(c), end(c))
@@ -89,16 +90,59 @@ int min_value(vector<int>& c) {
 }
 ```
 
-## inner_product
+## inner_product -> transform_reduce
 * a binary function + a fold function
-* find the max of a binary function
 
 ```
-int solve (int h, vector<int> w, vector<int> l) {
+// find the max of a binary function
+int solve(int h, vector<int> w, vector<int> l) {
   return max(0, inner_product(begin(w), end(w), begin(l), 0,
     [](auto a, auto b) { return max(a, b); }, // fold function
     [](auto a, auto b) { return a - (b / 4); }) - h); // binary function
 }
 ```
+
+* `transform_reduce(cbegin(v), cend(v), cbegin(u), 0, plus{}, multiplies{});`
+  * start with 0
+  * fold defaults to plus
+  * transform defaults to multiply
+
+```
+// use transform_reduce on adjacent_difference problem
+int min_value(vector<int>& c) {
+  return transform_reduce(cbegin(c), --cend(c), ++cbegin(c), std::numeric_limits<int>::max,
+    [](auto a, auto b) { return min(a, b); }, // reduce
+    [](auto a, auto b) { return abs(a, b); }); // transform
+}
+```
+
+## partial_sum
+* range sum, can be used with binary_search
+* defaults to +, but can be overridden
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
