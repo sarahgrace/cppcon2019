@@ -50,21 +50,16 @@
   * any operations without preconditions can be safely invoked
 
 # using the model 
-Q: should I throw an exception?
-A: if caller has dependent operations, yes
-
-Q: should I throw from the destructor?
-A: do you understand all the "gotchas"?
-
-Q: what if nobody catches my exception and the program terminates?
-A: 
-* if all subsequent instructions depend on yours -> the whole program needs to be cancelled
-* there is a bug in the caller that fails to stop the failure cascade -> this should be fixed
-
-Q: what if my caller is not "exception safe"?
-A: 
-* not observing cancellation cascade -> more serious problem
-* uses different failure handling technique -> maybe catch and translate to status code
-
-Q: what if throwing an exception incurs an unacceptable cost?
-A: they have certain performance trade offs, may not work in your domain
+* should I throw an exception?
+  * if caller has dependent operations, yes
+* should I throw from the destructor?
+  * do you understand all the "gotchas"?
+* what if nobody catches my exception and the program terminates?
+  * if all subsequent instructions depend on yours -> the whole program needs to be cancelled
+  * there is a bug in the caller that fails to stop the failure cascade
+    * this should be fixed
+* what if my caller is not "exception safe"?
+  * not observing cancellation cascade -> more serious problem
+  * uses different failure handling technique -> maybe catch and translate to status code
+* what if throwing an exception incurs an unacceptable cost?
+  * they have certain performance trade offs, may not work in your domain
