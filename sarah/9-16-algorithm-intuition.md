@@ -45,7 +45,7 @@ auto x = accumulate (cbegin(v), cend(v), 0, plus{}); // same as above
 auto x = accumulate (cbegin(v), cend(v), 0, multiplies{});
 ```
 
-## reduce/fold:
+## reduce/fold
 * taking a structure and folding it down to a single value
 * many STL are folds
 * can be done in parallel- std::execution::seq, std::execution::par
