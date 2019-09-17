@@ -6,7 +6,7 @@
 
 # smells
 
-1. construction separate from assignment
+### 1. construction separate from assignment
 ```
 std::string s;
 s = "hello world";
@@ -15,7 +15,7 @@ s = "hello world";
 const std::string = "hello world";
 ```
 
-2. don't use output variables
+### 2. don't use output variables
 ```
 // function changes input argument
 void get_value(std::string& s); 
@@ -27,7 +27,7 @@ std::string get_value();
 const auto value = get_value();
 ```
 
-3. raw loops
+### 3. raw loops
 ```
 // two separate loops
 int value = 0;
@@ -48,7 +48,7 @@ const auto total_area = [&](const auto& container) {
 return total_area(pipes) + total_area(hoses);
 ```
 
-4. non-canonical operators
+### 4. non-canonical operators
 ```
 struct Data {
   int x;
@@ -61,9 +61,9 @@ bool operator==(Data& rhs) {
 }
 ```
 
-5. code with conversions: if adding many ints, probably need result to be int64
+### 5. code with conversions: if adding many ints, probably need result to be int64
 
-6. code with implicit constructors
+### 6. code with implicit constructors
 ```
 void use_string(const std::string& s);
 const std::string s = "hello world";
@@ -78,14 +78,14 @@ std::string get_value() {
 }
 ```
 
-7. casting away const :)
+### 7. casting away const :)
 
-8. weak typing (aka "which int is which" interface)
+### 8. weak typing (aka "which int is which" interface)
 ```
 bool doStuff(int one, int two, int three, int four);
 ```
 
-9. `static const` -> `constexpr static`
+### 9. `static const` -> `constexpr static`
 ```
 void foo(const bool error) {
   // can use constexpr
@@ -96,7 +96,7 @@ void foo(const bool error) {
 }
 ```
 
-10. `extern const`
+### 10. `extern const`
 ```
 // value is known at compile time
 // constexpr int value = 5;
@@ -106,8 +106,18 @@ int getValue() {
 }
 ```
 
-11. raw `new` and `delete`
+### 11. raw `new` and `delete`
 
+### 12. ANY LACK OF CONST IS A CODE SMELL
+* forces us into more organized code
+* prevents common error
+* allows the compiler to make optimizations
+* do you const:
+  * temporary values? can but better to inline
+  * return types? no
+  * member variables? no because you can't move them, but you can do shared_ptr<const T>
 
-
-
+# conclusions
+* use more auto
+* use correct types to avoid casting
+* avoid named temporaries to avoid std::move
