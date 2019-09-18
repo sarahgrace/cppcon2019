@@ -20,13 +20,12 @@ auto [a, b] = minmax_element(cbegin(v), cend(v));
 return *b - *a;
 ```
 # algorithms
-
 * headers
   * \<algorithm\>
   * \<numeric\>
   * \<memory\>
 
-## iota
+## 1. iota
 ```
 vector<int> v(10);
 
@@ -37,7 +36,7 @@ iota(v.begin(), v.end(), 1); // 1 2 3 4 5 6 7 8 9 10
 iota(v.rbegin(), v.rend(), 1); // 10 9 8 7 6 5 4 3 2 1
 ```
 
-## accumulate/reduce
+## 2. accumulate/reduce
 ```
 vector<int> v{1, 2, 3, 4, 5};
 auto x = accumulate (cbegin(v), cend(v), 0); // default is plus{}
@@ -45,7 +44,7 @@ auto x = accumulate (cbegin(v), cend(v), 0, plus{}); // same as above
 auto x = accumulate (cbegin(v), cend(v), 0, multiplies{});
 ```
 
-## reduce/fold
+## 3. reduce/fold
 * taking a structure and folding it down to a single value
 * many STL are folds
 * can be done in parallel- std::execution::seq, std::execution::par
@@ -77,7 +76,7 @@ bool all_of(Iterator r, Iterator l, Predicate p)  {
 }
 ```
 
-## adjacent difference
+## 4. adjacent difference
 * N coins, want to find 2 coins with the minimum difference
 
 ```
@@ -90,7 +89,7 @@ int min_value(vector<int>& c) {
 }
 ```
 
-## inner_product -> transform_reduce
+## 5. inner_product -> transform_reduce
 * a binary function + a fold function
 
 ```
@@ -116,33 +115,51 @@ int min_value(vector<int>& c) {
 }
 ```
 
-## partial_sum
+## 6. partial_sum
 * range sum, can be used with binary_search
 * defaults to +, but can be overridden
 
+```
+vector v{1, 2, 3, 4, 5};
+vector u(5, 0);
+partial_sum(cbegin(v), cend(v), begin(u));
+// 1 3 6 10 15
+```
+* ex: given n non-negative integers representing an elevation map, compute how much water will be trapped in the topology after it rains
 
+```
+template <class T>
+using rev = reverse_iterator<T>;
+int trap(vector<int>& v) {
+  vector u(v.size(), 0);
+  auto it = max_element(cbegin(v), cend(v));
+  inclusive_scan(begin(v), next(it), begin(u), ufo::max()); // scan begin->max
+  inclusive_scan(rbegin(v), rev(it), rbegin(u), ufo::max()); // scan max->end
+  return transform_reduce(cbegin(u), cend(u), cbegin(v), 0,
+    std::plus<>(),
+    std::minus<>());
+}
+```
 
+# algorithm intuition table
 
+algo | indicies viewed | accumulator | reduce/transform | default | filter
+--- | --- | --- | --- | --- | ---
+accumulate/reduce | 1 | yes (init=specified) | reduce | plus | 
+transform_reduce | 1 * | yes (init=specified) | reduce | plus, mult | 
+inclusive_scan | 1 | yes (init=first element) | transform | plus | 
+exclusive_scan | 1 | yes (init=specified) | transform | plus | 
+adjacent_difference | 2 | no | transform | minus | 
+transform_inclusive_scan | 2 | yes | transform | - | 
+adjacent_reduce | 2 | yes | reduce | - | 
+adjacent_find | 2 | no | reduce * (short circuits) | equal_to | 
+transform | 1 * | no | transform | - | 
+find | 1 | no | reduce * (short circuits) | - | 
+iota | n/a | n/a | transform | - | 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+```
+auto generate_n(int n) {
+  vector fib(n, 1);
+  return adjacent_difference(cbegin(fib), cend(fib) - 1, begin(fib) + 1, std::plus{});
+}
+```
