@@ -143,19 +143,19 @@ int trap(vector<int>& v) {
 
 # algorithm intuition table
 
-algo | indicies viewed | accumulator | reduce/transform | default | filter
---- | --- | --- | --- | --- | ---
-accumulate/reduce | 1 | yes (init=specified) | reduce | plus | 
-transform_reduce | 1 * | yes (init=specified) | reduce | plus, mult | 
-inclusive_scan | 1 | yes (init=first element) | transform | plus | 
-exclusive_scan | 1 | yes (init=specified) | transform | plus | 
-adjacent_difference | 2 | no | transform | minus | 
-transform_inclusive_scan | 2 | yes | transform | - | 
-adjacent_reduce | 2 | yes | reduce | - | 
-adjacent_find | 2 | no | reduce * (short circuits) | equal_to | 
-transform | 1 * | no | transform | - | 
-find | 1 | no | reduce * (short circuits) | - | 
-iota | n/a | n/a | transform | - | 
+algo | indicies viewed | accumulator | reduce/transform | default
+--- | --- | --- | --- | ---
+accumulate/reduce | 1 | yes (init=specified) | reduce | plus
+transform_reduce | 1 * | yes (init=specified) | reduce | plus, mult
+inclusive_scan | 1 | yes (init=first element) | transform | plus
+exclusive_scan | 1 | yes (init=specified) | transform | plus
+adjacent_difference | 2 | no | transform | minus
+transform_inclusive_scan | 2 | yes | transform | -
+adjacent_reduce | 2 | yes | reduce | -
+adjacent_find | 2 | no | reduce * (short circuits) | equal_to
+transform | 1 * | no | transform | -
+find | 1 | no | reduce * (short circuits) | -
+iota | n/a | n/a | transform | -
 
 ```
 auto generate_n(int n) {
